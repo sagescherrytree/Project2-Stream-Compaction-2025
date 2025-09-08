@@ -45,7 +45,7 @@ namespace StreamCompaction {
         /**
          * Performs prefix-sum (aka scan) on idata, storing the result into odata.
          */
-        void scan(int n, int *odata, const int *idata) {
+        void scan(int n, int* odata, const int* idata) {
             // One buffer for in place scan.
             int* dev_buffer;
 
@@ -100,7 +100,7 @@ namespace StreamCompaction {
             cudaFree(dev_buffer);
         }
 
-        // Device-only scan to mitigate timer issues. Use in radix sort.
+        // Device-only scan to mitigate timer issues, for radix sort.
         void scanDevice(int n, int* dev_odata, const int* dev_idata) {
             // dev_idata: input device array
             // dev_odata: output device array (pre-allocated)
@@ -143,7 +143,8 @@ namespace StreamCompaction {
          * @param idata  The array of elements to compact.
          * @returns      The number of elements remaining after compaction.
          */
-        int compact(int n, int *odata, const int *idata) {
+        int compact(int n, int* odata, const int* idata) {
+
             int* dev_idata;
             int* dev_odata;
             int* dev_flagged;
