@@ -167,7 +167,7 @@ For the first set of runtime analysis tests, I varied the size of the array and 
 | 23             |14.966| 5.634 |   3.861   |
 | 24             |33.699| 11.739|   6.451   |
 
-| ![](images/arrSize_scanPow2.png) |
+| ![](img/arrSize_scanPow2.png) |
 |:--:|
 
 **blockSize = 128, array size non power of 2**
@@ -179,7 +179,7 @@ For the first set of runtime analysis tests, I varied the size of the array and 
 | 23             |15.419| 5.486 |   3.585   |
 | 24             |38.369| 11.443|   7.157   |
 
-| ![](images/arrSize_scanNonPow2.png) |
+| ![](img/arrSize_scanNonPow2.png) |
 |:--:|
 
 From these two graphs, we can clearly see that the timing for the CPU methodology increases exponentially as the array size increases, which is to be expected because for larger data values CPU memory will spill over L1/L2 cache, making the sequential loop take more time to retrieve values. 
@@ -199,7 +199,7 @@ In the efficient implementation, we launch a kernel each for upsweep and downswe
 | 23             |58.646 |   5.707   |
 | 24             |129.814|   10.458  |
 
-| ![](images/arrSize_streamCompaction.png) |
+| ![](img/arrSize_streamCompaction.png) |
 |:--:|
 
 Using the runtime analysis for scan, we can hence see that the trend persists with the runtime of the entire stream compaction algorithm. CPU runtime will increase exponentially with the increase in array size, while efficient's timing increase remains much faster due to many of the reasons listed above, including but not limited to its optimised memory coalescing, parallel execution of scanning and scattering, and 2*log(n) kernel launches for upsweep and downsweep.
@@ -215,7 +215,7 @@ Using the runtime analysis for scan, we can hence see that the trend persists wi
 | 23             | 189.99 |
 | 24             | 338.039|
 
-| ![](images/arrSize_radixSort.png) |
+| ![](img/arrSize_radixSort.png) |
 |:--:|
 
 Radix sort uses multiple calls to efficient scan to sort an array based on Least Significant Bit to Most Significant Bit. Because scan is called for every bit and we are sorting with integers (max len 32), the runtime is O(n * k), where k = 32. The arrays b, e, and f which are used in memory as well are also coalesced, contributing to its efficiency. 
