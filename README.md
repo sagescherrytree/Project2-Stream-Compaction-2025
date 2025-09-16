@@ -152,68 +152,68 @@ for bit from 0 -> (sizeof(int)*8 - 1):
 
 Runtime: O(n) or O(n * 32)
 
-## Output of Scan and Stream Compaction Tests
+## Output of Scan and Stream Compaction Tests (Array Size = 2^22)
 
 ```
 ****************
 ** SCAN TESTS **
 ****************
-    [   5  30  10  40   5  12  14  47  15   0  17   1  19 ...  42   0 ]
+    [  29  20   9  28   3  43  38  45  37  31  14  45  49 ...  19   0 ]
 ==== cpu scan, power-of-two ====
-   elapsed time: 9.5807ms    (std::chrono Measured)
-    [   0   5  35  45  85  90 102 116 163 178 178 195 196 ... 102752050 102752092 ]
+   elapsed time: 7.0663ms    (std::chrono Measured)
+    [   0  29  49  58  86  89 132 170 215 252 283 297 342 ... 102694886 102694905 ]
 ==== cpu scan, non-power-of-two ====
-   elapsed time: 8.6127ms    (std::chrono Measured)
-    [   0   5  35  45  85  90 102 116 163 178 178 195 196 ... 102751974 102751977 ]
+   elapsed time: 6.5774ms    (std::chrono Measured)
+    [   0  29  49  58  86  89 132 170 215 252 283 297 342 ... 102694796 102694834 ]
     passed
 ==== naive scan, power-of-two ====
-   elapsed time: 3.03334ms    (CUDA Measured)
+   elapsed time: 2.92838ms    (CUDA Measured)
     passed
 ==== naive scan, non-power-of-two ====
-   elapsed time: 2.7247ms    (CUDA Measured)
+   elapsed time: 2.66061ms    (CUDA Measured)
     passed
 ==== work-efficient scan, power-of-two ====
-   elapsed time: 2.47667ms    (CUDA Measured)
+   elapsed time: 2.56464ms    (CUDA Measured)
     passed
 ==== work-efficient scan, non-power-of-two ====
-   elapsed time: 2.41245ms    (CUDA Measured)
+   elapsed time: 2.60512ms    (CUDA Measured)
     passed
 ==== thrust scan, power-of-two ====
-   elapsed time: 0.429056ms    (CUDA Measured)
+   elapsed time: 0.272416ms    (CUDA Measured)
     passed
 ==== thrust scan, non-power-of-two ====
-   elapsed time: 0.351232ms    (CUDA Measured)
+   elapsed time: 0.299904ms    (CUDA Measured)
     passed
 
 *****************************
 ** STREAM COMPACTION TESTS **
 *****************************
-    [   2   0   0   3   1   0   1   0   2   0   3   3   2 ...   3   0 ]
+    [   1   2   1   0   1   3   0   1   1   3   2   3   3 ...   3   0 ]
 ==== cpu compact without scan, power-of-two ====
-   elapsed time: 11.5463ms    (std::chrono Measured)
-    [   2   3   1   1   2   3   3   2   3   1   2   2   3 ...   2   3 ]
+   elapsed time: 9.7757ms    (std::chrono Measured)
+    [   1   2   1   1   3   1   1   3   2   3   3   1   2 ...   1   3 ]
     passed
 ==== cpu compact without scan, non-power-of-two ====
-   elapsed time: 11.2937ms    (std::chrono Measured)
-    [   2   3   1   1   2   3   3   2   3   1   2   2   3 ...   2   3 ]
+   elapsed time: 9.499ms    (std::chrono Measured)
+    [   1   2   1   1   3   1   1   3   2   3   3   1   2 ...   2   1 ]
     passed
 ==== cpu compact with scan ====
-   elapsed time: 28.7928ms    (std::chrono Measured)
-    [   2   3   1   1   2   3   3   2   3   1   2   2   3 ...   2   3 ]
+   elapsed time: 22.9635ms    (std::chrono Measured)
+    [   1   2   1   1   3   1   1   3   2   3   3   1   2 ...   1   3 ]
     passed
 ==== work-efficient compact, power-of-two ====
-   elapsed time: 3.2329ms    (CUDA Measured)
+   elapsed time: 4.1111ms    (CUDA Measured)
     passed
 ==== work-efficient compact, non-power-of-two ====
-   elapsed time: 6.26838ms    (CUDA Measured)
+   elapsed time: 5.43821ms    (CUDA Measured)
     passed
 
 *****************************
 ** RADIX SORT TESTS **
 *****************************
-    [ 31858 21428 2056 10735   1 8488 3977 23320 20426 22852 32019 11295 32258 ... 535   0 ]
+    [ 10529 11470 28509 11228 25353 19443 10388 17545 13137 22131 14414 9195 5299 ... 25219   0 ]
 ==== radix sort ====
-   elapsed time: 132.93ms    (CUDA Measured)
+   elapsed time: 158.514ms    (CUDA Measured)
     passed
 ```
 
@@ -225,24 +225,30 @@ For the first set of runtime analysis tests, I varied the size of the array and 
 
 **blockSize = 128, array size power of 2**
 
-| Array Size     | CPU  | Naive | Efficient | Thrust |
-|----------------|------|-------|-----------|--------|
-| 21             |3.424 | 1.434 |   1.735   | 0.221  |
-| 22 (default)   |8.046 | 2.875 |   3.905   | 0.429  |
-| 23             |14.966| 5.634 |   3.861   | 0.471  |
-| 24             |33.699| 11.739|   6.451   | 0.622  |
+| Array Size     |  CPU  | Naive | Efficient | Thrust |
+|----------------|-------|-------|-----------|--------|
+| 21             |3.424  | 1.434 |   1.735   | 0.221  |
+| 22 (default)   |8.046  | 2.875 |   3.905   | 0.429  |
+| 23             |14.966 | 5.634 |   3.861   | 0.471  |
+| 24             |33.699 | 11.739|   6.451   | 0.622  |
+| 25             |65.599 | 24.099|   10.928  | 1.073  |
+| 26             |108.572| 51.384|   20.106  | 1.882  |
+| 27             |298.015| 105.21|   39.342  | 3.934  |
 
 | ![](img/arrSize_scan_pow2.png) |
 |:--:|
 
 **blockSize = 128, array size non power of 2**
 
-| Array Size     | CPU  | Naive | Efficient | Thrust |
-|----------------|------|-------|-----------|--------|
-| 21             |3.223 | 1.304 |   1.923   | 0.302  |
-| 22 (default)   |8.760 | 2.799 |   3.272   | 0.351  |
-| 23             |15.419| 5.486 |   3.585   | 0.521  |
-| 24             |38.369| 11.443|   7.157   | 1.502  |
+| Array Size     |  CPU  | Naive | Efficient | Thrust |
+|----------------|-------|-------|-----------|--------|
+| 21             |3.223  | 1.304 |   1.923   | 0.302  |
+| 22 (default)   |8.760  | 2.799 |   3.272   | 0.351  |
+| 23             |15.419 | 5.486 |   3.585   | 0.521  |
+| 24             |38.369 | 11.443|   7.157   | 1.502  |
+| 25             |59.687 | 24.553|   10.668  | 1.013  |
+| 26             |105.816| 50.069|   20.176  | 2.049  |
+| 27             |204.977| 105.09|   38.462  | 3.665  |
 
 | ![](img/arrSize_scan_nonPow2.png) |
 |:--:|
@@ -255,6 +261,8 @@ In the efficient implementation, we launch a kernel each for upsweep and downswe
 
 We can see that the fastest implementation of scan is actually, in fact, thrust implementation. Likely this implies further optimisation of the number of kernel calls from the efficient method, perhaps approaching minimal number of possible kernel calls. 
 
+Another optimisation that was made with the suggestion from a classmate was to divide the n value passed into the upsweep and downsweep kernels by the stride (which is bitshift of 1 << d + 1). This is due to the fact that if I used my previous method of multiplying k (which is my thread index for blocksize) by the stride each time in the kernel then compare that value to ensure it does not go out of bounds, for sufficiently large values of the array (e.g. 2^26), resulting k will be a negative number, which will cause an illegal access error after being compared to n. Now, with the modified n and doing the multiplication with stride AFTER the n bounds check, I can reach higher bounds of array size. 
+
 ### Size of Array v. Runtime of Stream Compaction Method
 
 **blockSize = 128, array size power of 2**
@@ -265,6 +273,9 @@ We can see that the fastest implementation of scan is actually, in fact, thrust 
 | 22 (default)   |23.797 |   3.163   |
 | 23             |58.646 |   5.707   |
 | 24             |129.814|   10.458  |
+| 25             |173.255|   21.970  |
+| 26             |342.382|   40.896  |
+| 27             |681.781|   75.973  |
 
 | ![](img/arrSize_streamCompaction.png) |
 |:--:|
@@ -303,12 +314,15 @@ In terms of blocksize, it is also quite interesting to see how differently the t
 
 **blockSize = 128, array size power of 2**
 
-| Array Size     | Radix  |
-|----------------|--------|
-| 21             | 65.865 |
-| 22 (default)   | 120.236|
-| 23             | 189.99 |
-| 24             | 338.039|
+| Array Size     |  Radix  |
+|----------------|---------|
+| 21             | 65.865  |
+| 22 (default)   | 120.236 |
+| 23             | 189.99  |
+| 24             | 338.039 |
+| 25             | 683.965 |
+| 26             | 1338.53 |
+| 27             | 2610.42 |
 
 | ![](img/arrSize_radixSort.png) |
 |:--:|

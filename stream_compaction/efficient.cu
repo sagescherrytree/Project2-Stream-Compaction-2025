@@ -15,31 +15,33 @@ namespace StreamCompaction {
         }
 
         // Upsweep on kernel.
-        __global__ void kernUpsweep(int n, int d, int* idata) {
+        __global__ void kernUpsweep(int n, int stride, int* idata) {
             int k = threadIdx.x + (blockIdx.x * blockDim.x);
-
-            k *= (1 << (d + 1));
 
             if (k >= n) {
                 return;
             }
 
-            idata[k + (1 << (d + 1)) - 1] += idata[k + (1 << d) - 1];
+            int index = k * stride + stride - 1;
+            int left = index - (stride >> 1);
+
+            idata[index] += idata[left];
         }
 
         // Downsweep on kernel.
-        __global__ void kernDownsweep(int n, int d, int* idata) {
+        __global__ void kernDownsweep(int n, int stride, int* idata) {
             int k = threadIdx.x + (blockIdx.x * blockDim.x);
-
-            k *= (1 << (d + 1));
 
             if (k >= n) {
                 return;
             }
 
-            int temp = idata[k + (1 << d) - 1]; // Node.leftChild save.
-            idata[k + (1 << d) - 1] = idata[k + (1 << (d + 1)) - 1]; // Node.leftChild = Node.val.
-            idata[k + (1 << (d + 1)) - 1] += temp; // Node.rightChild = Node.leftChild + Node.val.
+            int index = k * stride + stride - 1;
+            int left = index - (stride >> 1);
+
+            int temp = idata[left];
+            idata[left] = idata[index];
+            idata[index] += temp;
         }
 
         /**
@@ -65,14 +67,15 @@ namespace StreamCompaction {
             // Upsweep.
             for (int d = 0; d < ilog2ceil(n); d++) {
                 // Optimisation to get faster runtime.
-                int nodes = round_n >> (d + 1);
+                int stride = 1 << (d + 1);
+                int nodes = round_n / stride;
                 if (nodes == 0) {
                     break;
                 }
                 // Call fullBlocksPerGrid with new node size.
                 dim3 fullBlocksPerGrid((nodes + blockSize - 1) / blockSize);
                 // Call upsweep kern function w/ rounded n val.
-                kernUpsweep << < fullBlocksPerGrid, blockSize >> > (round_n, d, dev_buffer);
+                kernUpsweep << < fullBlocksPerGrid, blockSize >> > (nodes, stride, dev_buffer);
                 checkCUDAError("kernUpsweep failed.");
                 cudaDeviceSynchronize();
             }
@@ -82,18 +85,19 @@ namespace StreamCompaction {
             cudaMemset(dev_buffer + (round_n - 1), 0, sizeof(int));
             for (int d = ilog2ceil(n) - 1; d >= 0; d--) {
                 // Optimisation to get faster runtime.
-                int nodes = round_n >> (d + 1);
+                int stride = 1 << (d + 1);
+                int nodes = round_n / stride;
                 if (nodes == 0) {
                     break;
                 }
                 // Call fullBlocksPerGrid with new node size.
                 dim3 fullBlocksPerGrid((nodes + blockSize - 1) / blockSize);
                 // Call downsweep kern func.
-                kernDownsweep << < fullBlocksPerGrid, blockSize >> > (round_n, d, dev_buffer);
+                kernDownsweep << < fullBlocksPerGrid, blockSize >> > (nodes, stride, dev_buffer);
                 checkCUDAError("kernDownsweep failed.");
                 cudaDeviceSynchronize();
             }
-            ;           timer().endGpuTimer();
+            timer().endGpuTimer();
 
             // Copy data back to host from dev_buffer.
             cudaMemcpy(odata, dev_buffer, n * sizeof(int), cudaMemcpyDeviceToHost);
@@ -113,19 +117,32 @@ namespace StreamCompaction {
             cudaMemcpy(dev_buffer, dev_idata, n * sizeof(int), cudaMemcpyDeviceToDevice);
 
             for (int d = 0; d < ilog2ceil(n); d++) {
-                int nodes = round_n >> (d + 1);
-                if (nodes == 0) break;
+                // Optimisation to get faster runtime.
+                int stride = 1 << (d + 1);
+                int nodes = round_n / stride;
+
+                // Call fullBlocksPerGrid with new node size.
                 dim3 fullBlocksPerGrid((nodes + blockSize - 1) / blockSize);
-                kernUpsweep << < fullBlocksPerGrid, blockSize >> > (round_n, d, dev_buffer);
+                // Call upsweep kern function w/ rounded n val.
+                kernUpsweep << < fullBlocksPerGrid, blockSize >> > (nodes, stride, dev_buffer);
+                checkCUDAError("kernUpsweep failed.");
+                cudaDeviceSynchronize();
             }
 
+            // Downsweep. 
+            // Set (round_n - 1) val in dev_buffer = 0.
             cudaMemset(dev_buffer + (round_n - 1), 0, sizeof(int));
-
             for (int d = ilog2ceil(n) - 1; d >= 0; d--) {
-                int nodes = round_n >> (d + 1);
-                if (nodes == 0) break;
+                // Optimisation to get faster runtime.
+                int stride = 1 << (d + 1);
+                int nodes = round_n / stride;
+
+                // Call fullBlocksPerGrid with new node size.
                 dim3 fullBlocksPerGrid((nodes + blockSize - 1) / blockSize);
-                kernDownsweep << < fullBlocksPerGrid, blockSize >> > (round_n, d, dev_buffer);
+                // Call downsweep kern func.
+                kernDownsweep << < fullBlocksPerGrid, blockSize >> > (nodes, stride, dev_buffer);
+                checkCUDAError("kernDownsweep failed.");
+                cudaDeviceSynchronize();
             }
 
             // Copy result into output (device to device)
